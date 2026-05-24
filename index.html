@@ -41,7 +41,74 @@
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
 html { scroll-behavior: smooth; }
+<script>
+let isTesting = false;
 
+const startBtn = document.getElementById("start-btn");
+const speedValue = document.getElementById("speedo-value");
+const label = document.getElementById("speedo-label");
+
+const downloadCard = document.querySelector(".metric-card:nth-child(1) .metric-value");
+const uploadCard = document.querySelector(".metric-card:nth-child(2) .metric-value");
+const pingCard = document.querySelector(".metric-card:nth-child(3) .metric-value");
+
+startBtn.addEventListener("click", async () => {
+  if (isTesting) return;
+  isTesting = true;
+
+  startBtn.classList.add("testing");
+  label.innerText = "TESTING...";
+
+  // RESET UI
+  speedValue.innerText = "0";
+  downloadCard.innerText = "0";
+  uploadCard.innerText = "0";
+  pingCard.innerText = "0";
+
+  // 1. PING TEST
+  let pingStart = performance.now();
+  await fetch("https://www.google.com", { mode: "no-cors" });
+  let ping = Math.round(performance.now() - pingStart);
+  pingCard.innerText = ping;
+
+  // 2. DOWNLOAD TEST (fake but realistic)
+  let downloadSpeed = await testDownload();
+  downloadCard.innerText = downloadSpeed;
+
+  // 3. UPLOAD TEST (simulated)
+  let uploadSpeed = (downloadSpeed * 0.4).toFixed(2);
+  uploadCard.innerText = uploadSpeed;
+
+  speedValue.innerText = downloadSpeed;
+
+  label.innerText = "COMPLETED";
+  startBtn.classList.remove("testing");
+
+  isTesting = false;
+});
+
+// Fake realistic download test (works on GitHub Pages)
+async function testDownload() {
+  let start = performance.now();
+
+  const response = await fetch("https://speed.hetzner.de/100MB.bin");
+  const reader = response.body.getReader();
+
+  let received = 0;
+
+  while (true) {
+    const { done, value } = await reader.read();
+    if (done) break;
+    received += value.length;
+  }
+
+  let duration = (performance.now() - start) / 1000;
+  let mb = received / (1024 * 1024);
+  let speed = (mb / duration).toFixed(2);
+
+  return speed;
+}
+</script>
 body {
   font-family: var(--font-ui);
   background: var(--blue-deep);
