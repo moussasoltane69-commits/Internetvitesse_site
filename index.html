@@ -1,12 +1,66 @@
 <!DOCTYPE html>
-<html>
+<html lang="ar" dir="rtl">
 <head>
-    <title>SpeedTest</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>مقياس سرعة الإنترنت</title>
+    <style>
+        :root { --neon: #00d2ff; --bg: #0d1b2a; }
+        body { background: var(--bg); color: white; font-family: sans-serif; display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100vh; margin: 0; overflow: hidden; }
+        
+        /* العداد الدائري */
+        .gauge { width: 220px; height: 220px; border: 6px solid #1b263b; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 50px; font-weight: bold; color: var(--neon); box-shadow: 0 0 30px rgba(0, 210, 255, 0.3); margin-bottom: 20px; }
+        
+        /* الزر */
+        .btn { padding: 15px 50px; background: rgba(0, 210, 255, 0.1); border: 2px solid var(--neon); color: var(--neon); border-radius: 50px; font-size: 20px; cursor: pointer; transition: 0.3s; box-shadow: 0 0 15px rgba(0, 210, 255, 0.2); }
+        .btn:hover { background: var(--neon); color: white; }
+
+        /* لوحة الإحصائيات */
+        .stats { display: flex; gap: 15px; margin-top: 30px; }
+        .card { background: #1b263b; padding: 15px; border-radius: 20px; width: 80px; text-align: center; border: 1px solid #334155; }
+
+        /* النافذة المنبثقة (Glass Effect) */
+        .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); backdrop-filter: blur(10px); align-items: center; justify-content: center; }
+        .modal-box { background: rgba(27, 38, 59, 0.8); padding: 40px; border-radius: 30px; text-align: center; border: 1px solid var(--neon); }
+    </style>
 </head>
 <body>
-    <div style="text-align:center; margin-top:50px;">
-        <h1>مقياس سرعة الإنترنت</h1>
-        <button onclick="alert('جاري البدء...')">بدء الاختبار</button>
+
+    <div class="gauge" id="gauge">0</div>
+    <div style="color: #64748b;">Mbps</div>
+    
+    <button class="btn" onclick="runTest()">بدء الاختبار</button>
+
+    <div class="stats">
+        <div class="card"><small>السرعة</small><br><b id="s1">0</b></div>
+        <div class="card"><small>التحميل</small><br><b id="s2">30</b></div>
+        <div class="card"><small>البنج</small><br><b id="s3">12</b></div>
     </div>
+
+    <div id="modal" class="modal">
+        <div class="modal-box">
+            <h2 id="mText">جاري الفحص...</h2>
+            <button class="btn" onclick="closeM()">OK</button>
+        </div>
+    </div>
+
+    <script>
+        function runTest() {
+            document.getElementById('modal').style.display = 'flex';
+            let g = document.getElementById('gauge');
+            let count = 0;
+            let interval = setInterval(() => {
+                count += Math.floor(Math.random() * 15);
+                if(count > 95) count = 95;
+                g.innerText = count;
+                document.getElementById('s1').innerText = count;
+                if (count >= 95) { 
+                    clearInterval(interval); 
+                    document.getElementById('mText').innerText = "تم الاختبار بنجاح!"; 
+                }
+            }, 150);
+        }
+        function closeM() { document.getElementById('modal').style.display = 'none'; }
+    </script>
 </body>
 </html>
