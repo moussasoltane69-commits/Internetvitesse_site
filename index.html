@@ -3,31 +3,26 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>VELOX SPEED TEST PRO</title>
+<title>VELOX SPEED TEST ULTRA</title>
 
 <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;600;800&display=swap" rel="stylesheet">
 
 <style>
 body{
   margin:0;
-  background:#050d1a;
-  color:#fff;
   font-family:Orbitron;
-  overflow-x:hidden;
+  background:#040b18;
+  color:#fff;
 }
 
 header{
-  padding:20px;
   display:flex;
   justify-content:space-between;
+  padding:15px 20px;
   border-bottom:1px solid #00f5ff33;
 }
 
-.logo{
-  color:#00f5ff;
-  font-weight:800;
-  letter-spacing:3px;
-}
+.logo{color:#00f5ff;font-weight:800;letter-spacing:2px}
 
 .container{
   display:grid;
@@ -38,57 +33,45 @@ header{
 
 .panel{
   background:rgba(255,255,255,0.05);
-  border:1px solid rgba(0,245,255,0.2);
-  border-radius:20px;
-  padding:20px;
+  border:1px solid rgba(0,245,255,0.15);
+  border-radius:16px;
+  padding:18px;
   backdrop-filter:blur(10px);
 }
 
-.speed{
+.big{
+  font-size:55px;
   text-align:center;
-  font-size:60px;
   color:#00f5ff;
 }
 
-.unit{
-  text-align:center;
-  color:#aaa;
-}
-
 button{
-  margin-top:20px;
   width:100%;
-  padding:15px;
-  border-radius:30px;
+  padding:12px;
+  border-radius:25px;
+  margin-top:10px;
   border:1px solid #00f5ff;
   background:transparent;
   color:#00f5ff;
   cursor:pointer;
-  font-weight:bold;
 }
 
 button:hover{
   background:#00f5ff22;
 }
 
-.graph{
+canvas{
+  width:100%;
   height:120px;
-  display:flex;
-  align-items:flex-end;
-  gap:3px;
-}
-
-.bar{
-  width:4px;
-  background:#00ffaa;
-  height:10px;
-  transition:0.2s;
+  margin-top:15px;
+  background:rgba(0,0,0,0.2);
+  border-radius:10px;
 }
 
 .info{
   font-size:12px;
   color:#aaa;
-  line-height:1.8;
+  line-height:1.6;
 }
 </style>
 </head>
@@ -96,81 +79,166 @@ button:hover{
 <body>
 
 <header>
-  <div class="logo">VELOX SPEED TEST</div>
+  <div class="logo">VELOX ULTRA</div>
   <div id="status">READY</div>
 </header>
 
 <div class="container">
 
-  <div class="panel">
-    <div class="speed" id="speed">0</div>
-    <div class="unit">Mbps</div>
+<div class="panel">
+  <div class="big" id="speed">0</div>
+  <div style="text-align:center;color:#aaa">Mbps</div>
 
-    <button onclick="startTest()" id="btn">START TEST</button>
+  <button onclick="startUltraTest()">START ULTRA TEST</button>
 
-    <div class="graph" id="graph"></div>
-  </div>
+  <canvas id="graph"></canvas>
+</div>
 
-  <div class="panel">
-    <h3>NETWORK INFO</h3>
-    <div class="info" id="info">
-      Loading...
-    </div>
-  </div>
+<div class="panel">
+  <h3>NETWORK INFO</h3>
+  <div class="info" id="info">Loading...</div>
+</div>
 
 </div>
 
 <script>
-let graph = document.getElementById("graph");
+const canvas = document.getElementById("graph");
+const ctx = canvas.getContext("2d");
+canvas.width = canvas.offsetWidth;
+canvas.height = 120;
 
-for(let i=0;i<40;i++){
-  let b = document.createElement("div");
-  b.className="bar";
-  graph.appendChild(b);
+let dataPoints = [];
+
+/* ---------------- DRAW GRAPH ---------------- */
+function draw(){
+  ctx.clearRect(0,0,canvas.width,canvas.height);
+
+  ctx.beginPath();
+  ctx.strokeStyle="#00f5ff";
+
+  for(let i=0;i<dataPoints.length;i++){
+    let x = (i/dataPoints.length)*canvas.width;
+    let y = canvas.height - (dataPoints[i]/150)*canvas.height;
+
+    if(i===0) ctx.moveTo(x,y);
+    else ctx.lineTo(x,y);
+  }
+
+  ctx.stroke();
 }
 
-function randomBars(){
-  document.querySelectorAll(".bar").forEach(b=>{
-    b.style.height = Math.random()*100 + "px";
-  });
+/* ---------------- PING ---------------- */
+async function ping(server){
+  let times=[];
+  for(let i=0;i<6;i++){
+    let t0=performance.now();
+    await fetch(server+"/favicon.ico?"+Date.now(),{cache:"no-store",mode:"no-cors"});
+    let t1=performance.now();
+    times.push(t1-t0);
+  }
+  return Math.round(times.reduce((a,b)=>a+b)/times.length);
 }
 
-async function getIP(){
-  try{
-    let res = await fetch("https://ipapi.co/json/");
-    let data = await res.json();
-    document.getElementById("info").innerHTML =
-      `IP: ${data.ip}<br>
-       City: ${data.city}<br>
-       ISP: ${data.org}`;
-  }catch(e){
-    document.getElementById("info").innerHTML = "Network info unavailable";
+/* ---------------- DOWNLOAD ---------------- */
+async function downloadTest(url){
+  let start=performance.now();
+  let res = await fetch(url);
+  let reader = res.body.getReader();
+  let received=0;
+
+  while(true){
+    let {done,value}=await reader.read();
+    if(done) break;
+
+    received += value.length;
+    let time = (performance.now()-start)/1000;
+    let mbps = (received*8/1024/1024)/time;
+
+    update(mbps);
   }
 }
 
-getIP();
+/* ---------------- UPLOAD ---------------- */
+async function uploadTest(){
+  let data = new Uint8Array(8*1024*1024);
+  let start=performance.now();
 
-function startTest(){
-  let speed = 0;
-  let el = document.getElementById("speed");
-  let btn = document.getElementById("btn");
-  let status = document.getElementById("status");
+  await fetch("https://speed.cloudflare.com/__up",{
+    method:"POST",
+    body:data
+  });
 
-  btn.disabled = true;
-  status.innerText = "TESTING...";
+  let time=(performance.now()-start)/1000;
+  let mbps=(data.length*8/1024/1024)/time;
 
-  let i = setInterval(()=>{
-    speed += Math.random()*15;
-    el.innerText = speed.toFixed(1);
-    randomBars();
-
-    if(speed > 120){
-      clearInterval(i);
-      btn.disabled = false;
-      status.innerText = "DONE";
-    }
-  },200);
+  update(mbps);
 }
+
+/* ---------------- SPEED UPDATE ---------------- */
+function update(v){
+  document.getElementById("speed").innerText=v.toFixed(1);
+
+  dataPoints.push(v);
+  if(dataPoints.length>60) dataPoints.shift();
+
+  draw();
+}
+
+/* ---------------- BEST SERVER ---------------- */
+async function chooseBest(){
+  const servers=[
+    "https://speed.cloudflare.com",
+    "https://www.google.com",
+    "https://1.1.1.1"
+  ];
+
+  let best=servers[0];
+  let bestPing=9999;
+
+  for(let s of servers){
+    try{
+      let p=await ping(s);
+      if(p<bestPing){
+        bestPing=p;
+        best=s;
+      }
+    }catch(e){}
+  }
+
+  return {best,bestPing};
+}
+
+/* ---------------- FULL ULTRA TEST ---------------- */
+async function startUltraTest(){
+  let status=document.getElementById("status");
+  status.innerText="FINDING BEST SERVER...";
+
+  let serverData = await chooseBest();
+
+  status.innerText="PING: "+serverData.bestPing+"ms";
+
+  await new Promise(r=>setTimeout(r,800));
+
+  status.innerText="DOWNLOAD TEST...";
+  await downloadTest("https://speed.cloudflare.com/__down?bytes=30000000");
+
+  status.innerText="UPLOAD TEST...";
+  await uploadTest();
+
+  status.innerText="DONE ✔";
+}
+
+/* ---------------- IP INFO ---------------- */
+fetch("https://ipapi.co/json/")
+.then(r=>r.json())
+.then(d=>{
+  document.getElementById("info").innerHTML=`
+IP: ${d.ip}<br>
+City: ${d.city}<br>
+ISP: ${d.org}<br>
+Country: ${d.country_name}
+`;
+});
 </script>
 
 </body>
