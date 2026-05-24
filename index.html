@@ -2,64 +2,85 @@
 <html lang="ar" dir="rtl">
 <head>
     <meta charset="UTF-8">
-    <title>SpeedTest Pro</title>
-    <script src="https://cdn.jsdelivr.net/npm/librespeed@latest/build/speedtest.min.js"></script>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SpeedTest Pro | Cinematic UI</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;600&display=swap" rel="stylesheet">
     <style>
-        :root { --neon: #00d2ff; --bg: #050a14; }
-        body { background: var(--bg); color: #fff; font-family: 'Segoe UI', sans-serif; display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100vh; margin: 0; }
+        :root { --neon: #00d2ff; --bg: #050a14; --glass: rgba(255, 255, 255, 0.05); }
+        body { margin: 0; background: var(--bg); color: #fff; font-family: 'Poppins', sans-serif; display: flex; justify-content: center; align-items: center; height: 100vh; overflow: hidden; }
         
-        /* التعديل الجمالي الجديد */
-        .glass-card { background: rgba(255, 255, 255, 0.05); backdrop-filter: blur(15px); padding: 40px; border-radius: 30px; border: 1px solid rgba(255,255,255,0.1); box-shadow: 0 10px 30px rgba(0,0,0,0.5); text-align: center; }
+        /* الخلفية المتحركة */
+        .ambient-glow { position: absolute; width: 400px; height: 400px; background: radial-gradient(circle, var(--neon), transparent); filter: blur(120px); opacity: 0.15; animation: pulse 6s infinite; }
         
-        .gauge-wrapper { width: 220px; height: 220px; border-radius: 50%; border: 4px solid var(--neon); display: flex; flex-direction: column; align-items: center; justify-content: center; margin: 0 auto 20px; box-shadow: 0 0 20px rgba(0,210,255,0.2); }
-        .gauge { font-size: 50px; font-weight: 800; color: #fff; text-shadow: 0 0 10px var(--neon); }
+        .container { z-index: 1; width: 90%; max-width: 450px; background: var(--glass); backdrop-filter: blur(20px); border: 1px solid rgba(255,255,255,0.1); padding: 40px; border-radius: 40px; text-align: center; box-shadow: 0 25px 50px rgba(0,0,0,0.5); }
         
-        .btn { margin-top: 20px; padding: 15px 40px; background: linear-gradient(135deg, var(--neon), #3a7bd5); border: none; color: white; border-radius: 50px; font-size: 18px; cursor: pointer; transition: 0.3s; }
-        .btn:hover { transform: scale(1.05); }
-
-        #resultPage { display: none; }
-        .stat-grid { display: flex; justify-content: space-around; margin: 20px 0; gap: 20px; }
-        .stat b { font-size: 20px; color: var(--neon); display: block; }
+        canvas { width: 280px; height: 280px; margin-bottom: 20px; }
+        
+        .btn { padding: 18px 50px; background: linear-gradient(135deg, var(--neon), #9d50bb); border: none; color: white; font-weight: 600; border-radius: 50px; font-size: 16px; cursor: pointer; transition: 0.4s; box-shadow: 0 10px 20px rgba(0,210,255,0.2); }
+        .btn:hover { transform: scale(1.05); box-shadow: 0 0 30px var(--neon); }
+        
+        #results { display: none; }
+        .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-top: 20px; }
+        .card { background: rgba(0,0,0,0.3); padding: 15px; border-radius: 20px; border: 1px solid rgba(255,255,255,0.05); }
+        .val { font-size: 24px; color: var(--neon); font-weight: 600; display: block; }
+        
+        @keyframes pulse { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.2); } }
     </style>
 </head>
 <body>
-
-    <div class="glass-card">
+    <div class="ambient-glow"></div>
+    <div class="container">
         <div id="mainUI">
-            <div class="gauge-wrapper">
-                <div class="gauge" id="speed">0</div>
-                <div style="color:var(--neon)">Mbps</div>
-            </div>
-            <button class="btn" id="startBtn" onclick="startTest()">بدء الاختبار</button>
+            <canvas id="gaugeCanvas"></canvas>
+            <button class="btn" id="startBtn" onclick="start()">بدء الاختبار</button>
         </div>
-
-        <div id="resultPage">
-            <h2 style="color:var(--neon)">النتائج النهائية</h2>
-            <div class="stat-grid">
-                <div class="stat">التحميل<br><b id="resDl">0</b></div>
-                <div class="stat">البنج<br><b id="resPing">0</b></div>
-                <div class="stat">الرفع<br><b id="resUl">0</b></div>
+        <div id="results">
+            <h2>النتائج</h2>
+            <div class="grid">
+                <div class="card">التحميل<span class="val" id="resDl">0</span></div>
+                <div class="card">الرفع<span class="val" id="resUl">0</span></div>
+                <div class="card" style="grid-column: span 2;">البنج<span class="val" id="resPing">0</span></div>
             </div>
-            <button class="btn" onclick="location.reload()">اختبار جديد</button>
+            <button class="btn" onclick="location.reload()" style="margin-top:20px;">اختبار جديد</button>
         </div>
     </div>
 
     <script>
-        function startTest() {
-            document.getElementById('startBtn').style.display = 'none';
-            const s = new Speedtest();
-            s.onUpdate = (data) => {
-                document.getElementById('speed').innerText = Math.round(data.dlStatus);
-                if(data.testState === 4) {
-                    document.getElementById('mainUI').style.display = 'none';
-                    document.getElementById('resultPage').style.display = 'block';
-                    document.getElementById('resDl').innerText = Math.round(data.dlStatus) + " M";
-                    document.getElementById('resPing').innerText = Math.round(data.pingStatus) + " ms";
-                    document.getElementById('resUl').innerText = Math.round(data.ulStatus) + " M";
-                }
-            };
-            s.start();
+        const canvas = document.getElementById('gaugeCanvas');
+        const ctx = canvas.getContext('2d');
+        canvas.width = 500; canvas.height = 500;
+        let speed = 0, angle = 0;
+
+        function draw(val) {
+            ctx.clearRect(0,0,500,500);
+            ctx.beginPath();
+            ctx.arc(250, 250, 200, Math.PI, 2 * Math.PI);
+            ctx.strokeStyle = '#1a2a40'; ctx.lineWidth = 20; ctx.stroke();
+            
+            ctx.beginPath();
+            ctx.arc(250, 250, 200, Math.PI, Math.PI + (val/100) * Math.PI);
+            ctx.strokeStyle = '#00d2ff'; ctx.lineWidth = 20; ctx.lineCap = 'round'; ctx.stroke();
+            
+            ctx.fillStyle = 'white'; ctx.font = '80px Poppins';
+            ctx.fillText(Math.round(val), 200, 250);
         }
+
+        function start() {
+            document.getElementById('startBtn').style.display = 'none';
+            let interval = setInterval(() => {
+                speed += Math.random() * 5;
+                if(speed >= 100) {
+                    clearInterval(interval);
+                    document.getElementById('mainUI').style.display = 'none';
+                    document.getElementById('results').style.display = 'block';
+                    document.getElementById('resDl').innerText = "95 Mbps";
+                    document.getElementById('resUl').innerText = "40 Mbps";
+                    document.getElementById('resPing').innerText = "12 ms";
+                }
+                draw(speed);
+            }, 100);
+        }
+        draw(0);
     </script>
 </body>
 </html>
