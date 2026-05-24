@@ -1,86 +1,968 @@
 <!DOCTYPE html>
 <html lang="ar" dir="rtl">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SpeedTest Pro | Cinematic UI</title>
-    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;600&display=swap" rel="stylesheet">
-    <style>
-        :root { --neon: #00d2ff; --bg: #050a14; --glass: rgba(255, 255, 255, 0.05); }
-        body { margin: 0; background: var(--bg); color: #fff; font-family: 'Poppins', sans-serif; display: flex; justify-content: center; align-items: center; height: 100vh; overflow: hidden; }
-        
-        /* الخلفية المتحركة */
-        .ambient-glow { position: absolute; width: 400px; height: 400px; background: radial-gradient(circle, var(--neon), transparent); filter: blur(120px); opacity: 0.15; animation: pulse 6s infinite; }
-        
-        .container { z-index: 1; width: 90%; max-width: 450px; background: var(--glass); backdrop-filter: blur(20px); border: 1px solid rgba(255,255,255,0.1); padding: 40px; border-radius: 40px; text-align: center; box-shadow: 0 25px 50px rgba(0,0,0,0.5); }
-        
-        canvas { width: 280px; height: 280px; margin-bottom: 20px; }
-        
-        .btn { padding: 18px 50px; background: linear-gradient(135deg, var(--neon), #9d50bb); border: none; color: white; font-weight: 600; border-radius: 50px; font-size: 16px; cursor: pointer; transition: 0.4s; box-shadow: 0 10px 20px rgba(0,210,255,0.2); }
-        .btn:hover { transform: scale(1.05); box-shadow: 0 0 30px var(--neon); }
-        
-        #results { display: none; }
-        .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-top: 20px; }
-        .card { background: rgba(0,0,0,0.3); padding: 15px; border-radius: 20px; border: 1px solid rgba(255,255,255,0.05); }
-        .val { font-size: 24px; color: var(--neon); font-weight: 600; display: block; }
-        
-        @keyframes pulse { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.2); } }
-    </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SpeedTest Pro — اختبار السرعة</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Cairo:wght@300;400;600;700;900&family=Inter:wght@300;400;600;700&family=Poppins:wght@300;400;600;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --cyan: #00f5ff;
+  --cyan-dim: rgba(0,245,255,0.15);
+  --purple: #a855f7;
+  --purple-dim: rgba(168,85,247,0.15);
+  --mint: #10ffb0;
+  --mint-dim: rgba(16,255,176,0.12);
+  --navy: #050a1a;
+  --navy2: #080f25;
+  --glass: rgba(255,255,255,0.04);
+  --glass-border: rgba(255,255,255,0.08);
+  --glow-cyan: 0 0 40px rgba(0,245,255,0.4);
+  --glow-purple: 0 0 40px rgba(168,85,247,0.4);
+  --glow-mint: 0 0 40px rgba(16,255,176,0.3);
+  --font-ar: 'Cairo', sans-serif;
+  --font-en: 'Poppins', 'Inter', sans-serif;
+}
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+html, body {
+  width: 100%; height: 100%;
+  overflow-x: hidden;
+  background: var(--navy);
+  font-family: var(--font-ar);
+  color: #fff;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* ── CANVAS BG ── */
+#bg-canvas {
+  position: fixed; inset: 0;
+  z-index: 0; pointer-events: none;
+}
+
+/* ── AMBIENT ORBS ── */
+.orb {
+  position: fixed; border-radius: 50%; filter: blur(80px);
+  pointer-events: none; z-index: 1; opacity: 0.35;
+  animation: orbDrift 12s ease-in-out infinite alternate;
+}
+.orb1 { width: 500px; height: 500px; background: radial-gradient(circle, #7c3aed 0%, transparent 70%); top: -150px; left: -100px; }
+.orb2 { width: 600px; height: 600px; background: radial-gradient(circle, #0891b2 0%, transparent 70%); bottom: -200px; right: -150px; animation-delay: -6s; }
+.orb3 { width: 400px; height: 400px; background: radial-gradient(circle, #059669 0%, transparent 70%); top: 40%; left: 50%; transform: translateX(-50%); animation-delay: -3s; opacity: 0.2; }
+
+@keyframes orbDrift {
+  0% { transform: translate(0,0) scale(1); }
+  100% { transform: translate(30px,20px) scale(1.05); }
+}
+
+/* ── LAYOUT ── */
+#app {
+  position: relative; z-index: 10;
+  min-height: 100vh;
+  display: flex; flex-direction: column; align-items: center;
+  padding: 24px 16px 48px;
+}
+
+/* ── HEADER ── */
+header {
+  width: 100%; max-width: 900px;
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 0 0 32px;
+}
+.logo {
+  display: flex; align-items: center; gap: 10px;
+  font-family: var(--font-en); font-weight: 700; font-size: 1.15rem;
+  letter-spacing: 2px; text-transform: uppercase;
+}
+.logo-icon {
+  width: 36px; height: 36px;
+  background: linear-gradient(135deg, var(--cyan), var(--purple));
+  border-radius: 10px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 18px; box-shadow: var(--glow-cyan);
+}
+.logo-text span { color: var(--cyan); }
+.badge {
+  padding: 6px 16px; border-radius: 20px;
+  background: var(--glass); border: 1px solid var(--glass-border);
+  backdrop-filter: blur(12px);
+  font-family: var(--font-ar); font-size: 0.8rem; color: rgba(255,255,255,0.6);
+}
+
+/* ── MAIN CARD ── */
+.main-card {
+  width: 100%; max-width: 760px;
+  background: rgba(255,255,255,0.03);
+  border: 1px solid rgba(255,255,255,0.07);
+  border-radius: 32px;
+  backdrop-filter: blur(40px);
+  padding: 40px 32px 36px;
+  box-shadow: 0 8px 80px rgba(0,0,0,0.5), inset 0 1px 0 rgba(255,255,255,0.06);
+  display: flex; flex-direction: column; align-items: center; gap: 28px;
+  position: relative; overflow: hidden;
+}
+.main-card::before {
+  content: ''; position: absolute;
+  top: -1px; left: 10%; right: 10%; height: 1px;
+  background: linear-gradient(90deg, transparent, var(--cyan), var(--purple), transparent);
+  opacity: 0.7;
+}
+
+/* ── SPEEDOMETER ── */
+.speedo-wrap {
+  position: relative;
+  width: min(340px, 88vw); height: min(340px, 88vw);
+}
+#speedo-canvas {
+  width: 100%; height: 100%;
+  filter: drop-shadow(0 0 24px rgba(0,245,255,0.25));
+}
+
+.speedo-center {
+  position: absolute; inset: 0;
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  gap: 2px; pointer-events: none;
+  transform: translateY(8%);
+}
+
+.speed-label {
+  font-family: var(--font-en); font-size: 0.65rem; font-weight: 600;
+  letter-spacing: 3px; text-transform: uppercase;
+  color: rgba(255,255,255,0.4);
+}
+.speed-value {
+  font-family: var(--font-en); font-size: clamp(2.4rem, 8vw, 3.8rem);
+  font-weight: 700; line-height: 1;
+  background: linear-gradient(135deg, #fff 30%, var(--cyan));
+  -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+  background-clip: text;
+  text-shadow: none;
+  letter-spacing: -2px;
+}
+.speed-unit {
+  font-family: var(--font-en); font-size: 0.8rem; font-weight: 400;
+  color: rgba(255,255,255,0.45); letter-spacing: 1px;
+}
+.status-pill {
+  margin-top: 6px;
+  padding: 4px 14px; border-radius: 20px;
+  font-family: var(--font-ar); font-size: 0.72rem;
+  background: rgba(0,245,255,0.1); border: 1px solid rgba(0,245,255,0.25);
+  color: var(--cyan);
+  transition: all 0.4s;
+}
+
+/* ── METRIC PILLS ── */
+.metrics-row {
+  display: flex; gap: 12px; width: 100%; justify-content: center;
+  flex-wrap: wrap;
+}
+.metric-pill {
+  flex: 1 1 130px; max-width: 180px;
+  background: var(--glass); border: 1px solid var(--glass-border);
+  border-radius: 18px; backdrop-filter: blur(20px);
+  padding: 14px 18px;
+  display: flex; flex-direction: column; align-items: flex-start; gap: 6px;
+  transition: transform 0.3s, box-shadow 0.3s, border-color 0.3s;
+  position: relative; overflow: hidden;
+}
+.metric-pill::after {
+  content: ''; position: absolute;
+  bottom: 0; left: 0; right: 0; height: 1px;
+  background: linear-gradient(90deg, transparent, var(--accent-color, var(--cyan)), transparent);
+  opacity: 0;
+  transition: opacity 0.4s;
+}
+.metric-pill.active::after { opacity: 1; }
+.metric-pill:hover { transform: translateY(-3px); }
+
+.metric-pill.dl { --accent-color: var(--cyan); }
+.metric-pill.ul { --accent-color: var(--purple); }
+.metric-pill.ping { --accent-color: var(--mint); }
+.metric-pill.jitter { --accent-color: #f97316; }
+
+.pill-icon {
+  width: 32px; height: 32px; border-radius: 10px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 15px;
+}
+.dl .pill-icon { background: rgba(0,245,255,0.12); box-shadow: 0 0 12px rgba(0,245,255,0.2); }
+.ul .pill-icon { background: rgba(168,85,247,0.12); box-shadow: 0 0 12px rgba(168,85,247,0.2); }
+.ping .pill-icon { background: rgba(16,255,176,0.12); box-shadow: 0 0 12px rgba(16,255,176,0.2); }
+.jitter .pill-icon { background: rgba(249,115,22,0.12); box-shadow: 0 0 12px rgba(249,115,22,0.2); }
+
+.pill-label {
+  font-family: var(--font-ar); font-size: 0.68rem; color: rgba(255,255,255,0.45);
+}
+.pill-val {
+  font-family: var(--font-en); font-size: 1.35rem; font-weight: 700;
+  line-height: 1; color: #fff; letter-spacing: -0.5px;
+}
+.dl .pill-val { color: var(--cyan); text-shadow: 0 0 16px rgba(0,245,255,0.5); }
+.ul .pill-val { color: var(--purple); text-shadow: 0 0 16px rgba(168,85,247,0.5); }
+.ping .pill-val { color: var(--mint); text-shadow: 0 0 16px rgba(16,255,176,0.5); }
+.jitter .pill-val { color: #f97316; text-shadow: 0 0 16px rgba(249,115,22,0.4); }
+
+.pill-unit {
+  font-family: var(--font-en); font-size: 0.62rem; color: rgba(255,255,255,0.3);
+}
+
+/* mini-spark */
+.mini-spark {
+  width: 100%; height: 28px; margin-top: 4px;
+}
+
+/* ── SERVER INFO ── */
+.server-info {
+  display: flex; gap: 20px; align-items: center; justify-content: center;
+  flex-wrap: wrap; width: 100%;
+  padding: 14px 20px; border-radius: 16px;
+  background: var(--glass); border: 1px solid var(--glass-border);
+  backdrop-filter: blur(12px);
+}
+.server-item {
+  display: flex; align-items: center; gap: 8px;
+  font-family: var(--font-ar); font-size: 0.75rem; color: rgba(255,255,255,0.5);
+}
+.server-dot {
+  width: 8px; height: 8px; border-radius: 50%;
+  background: var(--mint); box-shadow: 0 0 8px var(--mint);
+  animation: pulse 2s infinite;
+}
+@keyframes pulse { 0%,100%{opacity:1;transform:scale(1)} 50%{opacity:0.5;transform:scale(0.8)} }
+
+/* ── START BUTTON ── */
+.btn-start {
+  position: relative;
+  padding: 18px 56px;
+  border: none; border-radius: 50px; cursor: pointer;
+  font-family: var(--font-ar); font-size: 1.1rem; font-weight: 700;
+  color: var(--navy);
+  background: linear-gradient(135deg, var(--cyan) 0%, #0077ff 50%, var(--purple) 100%);
+  box-shadow: 0 0 30px rgba(0,245,255,0.4), 0 0 60px rgba(168,85,247,0.25), 0 4px 24px rgba(0,0,0,0.4);
+  transition: all 0.3s cubic-bezier(0.34,1.56,0.64,1);
+  overflow: hidden; letter-spacing: 0.5px;
+}
+.btn-start::before {
+  content: ''; position: absolute; inset: 0;
+  background: linear-gradient(135deg, rgba(255,255,255,0.25) 0%, transparent 60%);
+  border-radius: 50px;
+}
+.btn-start::after {
+  content: ''; position: absolute;
+  inset: -50%; width: 200%; height: 200%;
+  background: conic-gradient(transparent 0deg, rgba(255,255,255,0.12) 60deg, transparent 120deg);
+  animation: btnSpin 3s linear infinite;
+  pointer-events: none; opacity: 0;
+  transition: opacity 0.3s;
+}
+.btn-start:hover::after { opacity: 1; }
+.btn-start:hover {
+  transform: scale(1.06) translateY(-2px);
+  box-shadow: 0 0 50px rgba(0,245,255,0.6), 0 0 80px rgba(168,85,247,0.4), 0 8px 32px rgba(0,0,0,0.5);
+}
+.btn-start:active { transform: scale(0.97); }
+.btn-start.running { background: linear-gradient(135deg, #1a1a3e, #0d1535); color: rgba(255,255,255,0.4); cursor: not-allowed; box-shadow: none; }
+@keyframes btnSpin { from{transform:rotate(0deg)} to{transform:rotate(360deg)} }
+
+/* ── RESULT CARDS ── */
+.cards-grid {
+  display: grid; grid-template-columns: repeat(3,1fr); gap: 16px;
+  width: 100%; max-width: 760px; margin-top: 20px;
+}
+@media(max-width:580px){ .cards-grid { grid-template-columns: 1fr; } }
+
+.result-card {
+  background: rgba(255,255,255,0.03);
+  border: 1px solid rgba(255,255,255,0.06);
+  border-radius: 24px; backdrop-filter: blur(30px);
+  padding: 24px 20px;
+  display: flex; flex-direction: column; gap: 10px;
+  position: relative; overflow: hidden;
+  transition: transform 0.3s, box-shadow 0.3s, border-color 0.3s;
+  opacity: 0; transform: translateY(20px);
+  box-shadow: 0 4px 40px rgba(0,0,0,0.3);
+}
+.result-card.visible {
+  opacity: 1; transform: translateY(0);
+  transition: opacity 0.5s ease, transform 0.5s cubic-bezier(0.34,1.56,0.64,1), box-shadow 0.3s, border-color 0.3s;
+}
+.result-card:hover { transform: translateY(-5px); }
+.result-card.dl-card:hover { box-shadow: var(--glow-cyan), 0 8px 40px rgba(0,0,0,0.4); border-color: rgba(0,245,255,0.25); }
+.result-card.ul-card:hover { box-shadow: var(--glow-purple), 0 8px 40px rgba(0,0,0,0.4); border-color: rgba(168,85,247,0.25); }
+.result-card.ping-card:hover { box-shadow: var(--glow-mint), 0 8px 40px rgba(0,0,0,0.4); border-color: rgba(16,255,176,0.25); }
+
+.card-glow {
+  position: absolute; top: -40px; right: -40px;
+  width: 120px; height: 120px; border-radius: 50%; filter: blur(50px);
+  opacity: 0.3; pointer-events: none;
+}
+.dl-card .card-glow { background: var(--cyan); }
+.ul-card .card-glow { background: var(--purple); }
+.ping-card .card-glow { background: var(--mint); }
+
+.card-icon {
+  width: 44px; height: 44px; border-radius: 14px;
+  display: flex; align-items: center; justify-content: center; font-size: 20px;
+}
+.dl-card .card-icon { background: rgba(0,245,255,0.1); box-shadow: 0 0 20px rgba(0,245,255,0.25); }
+.ul-card .card-icon { background: rgba(168,85,247,0.1); box-shadow: 0 0 20px rgba(168,85,247,0.25); }
+.ping-card .card-icon { background: rgba(16,255,176,0.1); box-shadow: 0 0 20px rgba(16,255,176,0.25); }
+
+.card-title {
+  font-family: var(--font-ar); font-size: 0.8rem; color: rgba(255,255,255,0.45);
+}
+.card-value {
+  font-family: var(--font-en); font-size: 2.4rem; font-weight: 700;
+  line-height: 1; letter-spacing: -1px;
+}
+.dl-card .card-value { color: var(--cyan); text-shadow: 0 0 20px rgba(0,245,255,0.5); }
+.ul-card .card-value { color: var(--purple); text-shadow: 0 0 20px rgba(168,85,247,0.5); }
+.ping-card .card-value { color: var(--mint); text-shadow: 0 0 20px rgba(16,255,176,0.4); }
+
+.card-unit {
+  font-family: var(--font-en); font-size: 0.75rem; color: rgba(255,255,255,0.3);
+  margin-top: -6px;
+}
+.card-graph { width: 100%; height: 50px; margin-top: 6px; }
+
+/* ── FOOTER ── */
+footer {
+  margin-top: 40px; text-align: center;
+  font-family: var(--font-ar); font-size: 0.72rem;
+  color: rgba(255,255,255,0.2);
+}
+
+/* ── PROGRESS RING ── */
+.progress-ring {
+  position: absolute; inset: -8px;
+  pointer-events: none; opacity: 0;
+  transition: opacity 0.4s;
+}
+.progress-ring.active { opacity: 1; }
+
+/* Responsive */
+@media(max-width:680px){
+  .main-card { padding: 28px 16px 24px; border-radius: 24px; }
+  .metrics-row { gap: 8px; }
+  .metric-pill { padding: 12px 14px; }
+}
+@media(max-width:400px){
+  header { flex-direction: column; gap: 12px; text-align: center; }
+  .btn-start { padding: 16px 40px; font-size: 1rem; }
+}
+</style>
 </head>
 <body>
-    <div class="ambient-glow"></div>
-    <div class="container">
-        <div id="mainUI">
-            <canvas id="gaugeCanvas"></canvas>
-            <button class="btn" id="startBtn" onclick="start()">بدء الاختبار</button>
-        </div>
-        <div id="results">
-            <h2>النتائج</h2>
-            <div class="grid">
-                <div class="card">التحميل<span class="val" id="resDl">0</span></div>
-                <div class="card">الرفع<span class="val" id="resUl">0</span></div>
-                <div class="card" style="grid-column: span 2;">البنج<span class="val" id="resPing">0</span></div>
-            </div>
-            <button class="btn" onclick="location.reload()" style="margin-top:20px;">اختبار جديد</button>
-        </div>
+
+<!-- Ambient orbs -->
+<div class="orb orb1"></div>
+<div class="orb orb2"></div>
+<div class="orb orb3"></div>
+
+<!-- Animated canvas background -->
+<canvas id="bg-canvas"></canvas>
+
+<div id="app">
+  <!-- Header -->
+  <header>
+    <div class="logo">
+      <div class="logo-icon">⚡</div>
+      <div class="logo-text">Speed<span>Pro</span></div>
+    </div>
+    <div class="badge">اختبار السرعة المتقدم</div>
+  </header>
+
+  <!-- Main glass card -->
+  <div class="main-card">
+
+    <!-- Speedometer -->
+    <div class="speedo-wrap">
+      <canvas id="speedo-canvas"></canvas>
+      <div class="speedo-center">
+        <div class="speed-label" id="speed-label">جاهز</div>
+        <div class="speed-value" id="speed-value">0</div>
+        <div class="speed-unit">Mbps</div>
+        <div class="status-pill" id="status-pill">اضغط لبدء الاختبار</div>
+      </div>
     </div>
 
-    <script>
-        const canvas = document.getElementById('gaugeCanvas');
-        const ctx = canvas.getContext('2d');
-        canvas.width = 500; canvas.height = 500;
-        let speed = 0, angle = 0;
+    <!-- Metrics row -->
+    <div class="metrics-row">
+      <div class="metric-pill dl" id="pill-dl">
+        <div class="pill-icon">⬇️</div>
+        <div class="pill-label">تنزيل</div>
+        <div><span class="pill-val" id="pill-dl-val">—</span> <span class="pill-unit">Mbps</span></div>
+        <canvas class="mini-spark" id="spark-dl"></canvas>
+      </div>
+      <div class="metric-pill ul" id="pill-ul">
+        <div class="pill-icon">⬆️</div>
+        <div class="pill-label">رفع</div>
+        <div><span class="pill-val" id="pill-ul-val">—</span> <span class="pill-unit">Mbps</span></div>
+        <canvas class="mini-spark" id="spark-ul"></canvas>
+      </div>
+      <div class="metric-pill ping" id="pill-ping">
+        <div class="pill-icon">📡</div>
+        <div class="pill-label">بينج</div>
+        <div><span class="pill-val" id="pill-ping-val">—</span> <span class="pill-unit">ms</span></div>
+        <canvas class="mini-spark" id="spark-ping"></canvas>
+      </div>
+      <div class="metric-pill jitter" id="pill-jitter">
+        <div class="pill-icon">〰️</div>
+        <div class="pill-label">جيتر</div>
+        <div><span class="pill-val" id="pill-jitter-val">—</span> <span class="pill-unit">ms</span></div>
+        <canvas class="mini-spark" id="spark-jitter"></canvas>
+      </div>
+    </div>
 
-        function draw(val) {
-            ctx.clearRect(0,0,500,500);
-            ctx.beginPath();
-            ctx.arc(250, 250, 200, Math.PI, 2 * Math.PI);
-            ctx.strokeStyle = '#1a2a40'; ctx.lineWidth = 20; ctx.stroke();
-            
-            ctx.beginPath();
-            ctx.arc(250, 250, 200, Math.PI, Math.PI + (val/100) * Math.PI);
-            ctx.strokeStyle = '#00d2ff'; ctx.lineWidth = 20; ctx.lineCap = 'round'; ctx.stroke();
-            
-            ctx.fillStyle = 'white'; ctx.font = '80px Poppins';
-            ctx.fillText(Math.round(val), 200, 250);
-        }
+    <!-- Server -->
+    <div class="server-info">
+      <div class="server-item"><div class="server-dot"></div>متصل بـ: Algiers Server</div>
+      <div class="server-item">🌐 ISP: Algérie Télécom</div>
+      <div class="server-item">📍 Algeria, DZ</div>
+    </div>
 
-        function start() {
-            document.getElementById('startBtn').style.display = 'none';
-            let interval = setInterval(() => {
-                speed += Math.random() * 5;
-                if(speed >= 100) {
-                    clearInterval(interval);
-                    document.getElementById('mainUI').style.display = 'none';
-                    document.getElementById('results').style.display = 'block';
-                    document.getElementById('resDl').innerText = "95 Mbps";
-                    document.getElementById('resUl').innerText = "40 Mbps";
-                    document.getElementById('resPing').innerText = "12 ms";
-                }
-                draw(speed);
-            }, 100);
+    <!-- Button -->
+    <button class="btn-start" id="btn-start" onclick="startTest()">ابدأ الاختبار</button>
+  </div>
+
+  <!-- Result cards (shown after test) -->
+  <div class="cards-grid" id="cards-grid">
+    <div class="result-card dl-card" id="card-dl">
+      <div class="card-glow"></div>
+      <div class="card-icon">⬇️</div>
+      <div class="card-title">سرعة التنزيل</div>
+      <div class="card-value" id="card-dl-val">0</div>
+      <div class="card-unit">Mbps</div>
+      <canvas class="card-graph" id="graph-dl"></canvas>
+    </div>
+    <div class="result-card ul-card" id="card-ul">
+      <div class="card-glow"></div>
+      <div class="card-icon">⬆️</div>
+      <div class="card-title">سرعة الرفع</div>
+      <div class="card-value" id="card-ul-val">0</div>
+      <div class="card-unit">Mbps</div>
+      <canvas class="card-graph" id="graph-ul"></canvas>
+    </div>
+    <div class="result-card ping-card" id="card-ping">
+      <div class="card-glow"></div>
+      <div class="card-icon">📡</div>
+      <div class="card-title">البينج</div>
+      <div class="card-value" id="card-ping-val">0</div>
+      <div class="card-unit">ms</div>
+      <canvas class="card-graph" id="graph-ping"></canvas>
+    </div>
+  </div>
+
+  <footer>SpeedPro &copy; 2025 &nbsp;•&nbsp; جميع الحقوق محفوظة</footer>
+</div>
+
+<script>
+/* ═══════════════════════════════════════
+   BACKGROUND CANVAS — particles + waves
+═══════════════════════════════════════ */
+(function(){
+  const cv = document.getElementById('bg-canvas');
+  const ctx = cv.getContext('2d');
+  let W, H, particles = [], t = 0;
+
+  function resize(){
+    W = cv.width = window.innerWidth;
+    H = cv.height = window.innerHeight;
+  }
+  resize();
+  window.addEventListener('resize', resize);
+
+  // particles
+  for(let i=0;i<80;i++){
+    particles.push({
+      x: Math.random()*1920, y: Math.random()*1080,
+      r: Math.random()*1.5+0.3,
+      vx: (Math.random()-.5)*0.3,
+      vy: (Math.random()-.5)*0.3,
+      a: Math.random()*0.6+0.1,
+      hue: Math.random()<0.4?180:Math.random()<0.5?270:150
+    });
+  }
+
+  function drawWave(yBase, amp, freq, phase, color){
+    ctx.beginPath();
+    for(let x=0;x<=W;x+=3){
+      const y = yBase + Math.sin(x*freq + phase)*amp + Math.sin(x*freq*1.5+phase*1.3)*amp*0.4;
+      x===0 ? ctx.moveTo(x,y) : ctx.lineTo(x,y);
+    }
+    ctx.strokeStyle = color; ctx.lineWidth = 1;
+    ctx.stroke();
+  }
+
+  function frame(){
+    ctx.clearRect(0,0,W,H);
+    t += 0.008;
+
+    // waves
+    const cw = `rgba(0,245,255,`;
+    const pw = `rgba(168,85,247,`;
+    const mw = `rgba(16,255,176,`;
+    [
+      [H*0.35,28,0.004,t,    `${cw}0.06)`],
+      [H*0.42,20,0.005,t+1,  `${pw}0.05)`],
+      [H*0.5, 35,0.003,t*0.7,`${cw}0.04)`],
+      [H*0.6, 18,0.006,t+2,  `${mw}0.04)`],
+      [H*0.72,25,0.004,t*1.2,`${pw}0.04)`],
+    ].forEach(([y,a,f,ph,c])=>drawWave(y,a,f,ph,c));
+
+    // particles
+    particles.forEach(p=>{
+      p.x += p.vx; p.y += p.vy;
+      if(p.x<-5)p.x=W+5; if(p.x>W+5)p.x=-5;
+      if(p.y<-5)p.y=H+5; if(p.y>H+5)p.y=-5;
+      ctx.beginPath();
+      ctx.arc(p.x,p.y,p.r,0,Math.PI*2);
+      ctx.fillStyle=`hsla(${p.hue},100%,75%,${p.a})`;
+      ctx.fill();
+    });
+
+    requestAnimationFrame(frame);
+  }
+  frame();
+})();
+
+/* ═══════════════════════════════════════
+   SPEEDOMETER CANVAS
+═══════════════════════════════════════ */
+(function(){
+  const cv = document.getElementById('speedo-canvas');
+  const ctx = cv.getContext('2d');
+  const DPR = Math.min(window.devicePixelRatio||1,2);
+
+  function setSize(){
+    const s = cv.parentElement.offsetWidth;
+    cv.width = s*DPR; cv.height = s*DPR;
+    ctx.scale(DPR,DPR);
+    return s;
+  }
+  let SIZE = setSize();
+  window.addEventListener('resize',()=>{ ctx.setTransform(1,0,0,1,0,0); SIZE=setSize(); });
+
+  const START = Math.PI*0.75;
+  const END   = Math.PI*2.25;
+  const MAX   = 300; // Mbps max
+
+  window._speedo = {
+    needle: 0,     // current display angle [0..1]
+    target: 0,
+    glow: 0,
+    running: false,
+    phase: 'idle'  // idle | ping | dl | ul | done
+  };
+  const S = window._speedo;
+
+  function drawTicks(cx,cy,R){
+    const ticks = 13; // major
+    for(let i=0;i<=ticks;i++){
+      const pct = i/ticks;
+      const angle = START + pct*(END-START);
+      const isMajor = true;
+      const len = isMajor ? 14 : 8;
+      const inner = R-len; const outer = R;
+      const cos=Math.cos(angle), sin=Math.sin(angle);
+      ctx.beginPath();
+      ctx.moveTo(cx+inner*cos, cy+inner*sin);
+      ctx.lineTo(cx+outer*cos, cy+outer*sin);
+      const a = 0.15+pct*0.55;
+      ctx.strokeStyle = `rgba(255,255,255,${a})`;
+      ctx.lineWidth = isMajor ? 2 : 1;
+      ctx.stroke();
+
+      // minor ticks (4 between major)
+      if(i<ticks){
+        for(let j=1;j<=4;j++){
+          const mp = (i+j/5)/ticks;
+          const ma = START+mp*(END-START);
+          const ilen=R-6;
+          ctx.beginPath();
+          ctx.moveTo(cx+ilen*Math.cos(ma), cy+ilen*Math.sin(ma));
+          ctx.lineTo(cx+R*Math.cos(ma),    cy+R*Math.sin(ma));
+          ctx.strokeStyle='rgba(255,255,255,0.07)';
+          ctx.lineWidth=1;
+          ctx.stroke();
         }
-        draw(0);
-    </script>
+      }
+
+      // label
+      if(i%2===0){
+        const val = Math.round(pct*MAX);
+        const lr = R-30;
+        ctx.save();
+        ctx.translate(cx+lr*cos, cy+lr*sin);
+        ctx.font=`500 10px Poppins, Inter, sans-serif`;
+        ctx.textAlign='center'; ctx.textBaseline='middle';
+        ctx.fillStyle=`rgba(255,255,255,${0.2+pct*0.45})`;
+        ctx.fillText(val, 0, 0);
+        ctx.restore();
+      }
+    }
+  }
+
+  function drawArc(cx,cy,R,from,to,colorStops,lineWidth){
+    const grad = ctx.createLinearGradient(cx-R,cy,cx+R,cy);
+    colorStops.forEach(([s,c])=>grad.addColorStop(s,c));
+    ctx.beginPath();
+    ctx.arc(cx,cy,R,START+from*(END-START),START+to*(END-START));
+    ctx.strokeStyle=grad; ctx.lineWidth=lineWidth;
+    ctx.lineCap='round'; ctx.stroke();
+  }
+
+  function drawNeedle(cx,cy,R,pct){
+    const angle = START + pct*(END-START);
+    const len = R*0.62; const base=12;
+    const cos=Math.cos(angle), sin=Math.sin(angle);
+    const nx=cx+len*cos, ny=cy+len*sin;
+
+    // shadow glow
+    ctx.save();
+    ctx.shadowColor='rgba(0,245,255,0.6)'; ctx.shadowBlur=20;
+    ctx.beginPath();
+    ctx.moveTo(cx-base*Math.sin(angle)*0.5, cy+base*Math.cos(angle)*0.5);
+    ctx.lineTo(nx, ny);
+    ctx.lineTo(cx+base*Math.sin(angle)*0.5, cy-base*Math.cos(angle)*0.5);
+    ctx.closePath();
+    const ng = ctx.createLinearGradient(cx,cy,nx,ny);
+    ng.addColorStop(0,'rgba(0,245,255,0.8)');
+    ng.addColorStop(1,'rgba(0,245,255,0.05)');
+    ctx.fillStyle=ng; ctx.fill();
+    ctx.restore();
+
+    // center hub
+    const hubR=12;
+    const hubGrad=ctx.createRadialGradient(cx,cy,0,cx,cy,hubR);
+    hubGrad.addColorStop(0,'rgba(255,255,255,0.9)');
+    hubGrad.addColorStop(1,'rgba(0,245,255,0.2)');
+    ctx.beginPath(); ctx.arc(cx,cy,hubR,0,Math.PI*2);
+    ctx.fillStyle=hubGrad; ctx.fill();
+    ctx.beginPath(); ctx.arc(cx,cy,5,0,Math.PI*2);
+    ctx.fillStyle='rgba(0,245,255,0.9)'; ctx.fill();
+  }
+
+  let raf;
+  function render(){
+    const s = SIZE;
+    const cvW = cv.width/DPR, cvH = cv.height/DPR;
+    ctx.clearRect(0,0,cvW,cvH);
+
+    const cx=cvW/2, cy=cvH/2;
+    const outerR = cvW*0.47;
+    const trackR = outerR-10;
+    const arcR   = trackR-6;
+
+    // outer ring glow
+    ctx.save();
+    ctx.shadowColor='rgba(0,245,255,0.25)'; ctx.shadowBlur=30;
+    ctx.beginPath(); ctx.arc(cx,cy,outerR,0,Math.PI*2);
+    const ringGrad=ctx.createLinearGradient(cx-outerR,cy,cx+outerR,cy);
+    ringGrad.addColorStop(0,'rgba(0,245,255,0.12)');
+    ringGrad.addColorStop(0.5,'rgba(168,85,247,0.12)');
+    ringGrad.addColorStop(1,'rgba(16,255,176,0.12)');
+    ctx.strokeStyle=ringGrad; ctx.lineWidth=2; ctx.stroke();
+    ctx.restore();
+
+    // inner ring
+    ctx.beginPath(); ctx.arc(cx,cy,outerR-5,0,Math.PI*2);
+    ctx.strokeStyle='rgba(255,255,255,0.04)'; ctx.lineWidth=1; ctx.stroke();
+
+    // bg track
+    ctx.beginPath();
+    ctx.arc(cx,cy,arcR,START,END);
+    ctx.strokeStyle='rgba(255,255,255,0.06)'; ctx.lineWidth=10; ctx.lineCap='round';
+    ctx.stroke();
+
+    // colored arc fill (smooth)
+    const needlePct = S.needle;
+    if(needlePct>0.001){
+      drawArc(cx,cy,arcR,0,Math.min(needlePct,0.33),
+        [[0,'rgba(16,255,176,0.9)'],[1,'rgba(0,200,255,0.9)']],10);
+      if(needlePct>0.33)
+        drawArc(cx,cy,arcR,0.33,Math.min(needlePct,0.66),
+          [[0,'rgba(0,200,255,0.9)'],[1,'rgba(130,80,255,0.9)']],10);
+      if(needlePct>0.66)
+        drawArc(cx,cy,arcR,0.66,needlePct,
+          [[0,'rgba(130,80,255,0.9)'],[1,'rgba(168,85,247,0.9)']],10);
+    }
+
+    // loading spinner (during test)
+    if(S.running){
+      const spinA = Date.now()/600;
+      ctx.save();
+      ctx.shadowColor='rgba(0,245,255,0.5)'; ctx.shadowBlur=16;
+      ctx.beginPath();
+      ctx.arc(cx,cy,outerR+4,spinA,spinA+1.2);
+      ctx.strokeStyle='rgba(0,245,255,0.8)'; ctx.lineWidth=3; ctx.lineCap='round'; ctx.stroke();
+      ctx.restore();
+      // second spinner opposite
+      ctx.save();
+      ctx.beginPath();
+      ctx.arc(cx,cy,outerR+4,spinA+Math.PI,spinA+Math.PI+0.8);
+      ctx.strokeStyle='rgba(168,85,247,0.6)'; ctx.lineWidth=3; ctx.lineCap='round'; ctx.stroke();
+      ctx.restore();
+    }
+
+    // ticks
+    drawTicks(cx,cy,trackR-4);
+
+    // needle
+    drawNeedle(cx,cy,trackR-8,S.needle);
+
+    // reflection sheen
+    const sheenG=ctx.createRadialGradient(cx,cy-outerR*0.3,0,cx,cy,outerR*0.7);
+    sheenG.addColorStop(0,'rgba(255,255,255,0.04)');
+    sheenG.addColorStop(1,'rgba(255,255,255,0)');
+    ctx.beginPath(); ctx.arc(cx,cy,outerR-2,0,Math.PI*2);
+    ctx.fillStyle=sheenG; ctx.fill();
+
+    // easing needle
+    S.needle += (S.target - S.needle) * 0.06;
+
+    raf = requestAnimationFrame(render);
+  }
+  render();
+})();
+
+/* ═══════════════════════════════════════
+   MINI SPARK CHARTS
+═══════════════════════════════════════ */
+const sparkData = { dl:[], ul:[], ping:[], jitter:[] };
+
+function pushSpark(key, val){
+  sparkData[key].push(val);
+  if(sparkData[key].length>40) sparkData[key].shift();
+  drawSpark(key);
+}
+
+function drawSpark(key){
+  const cv = document.getElementById(`spark-${key}`);
+  if(!cv) return;
+  const ctx = cv.getContext('2d');
+  const W=cv.offsetWidth||120; const H=cv.offsetHeight||28;
+  cv.width=W*2; cv.height=H*2; ctx.scale(2,2);
+  ctx.clearRect(0,0,W,H);
+  const d=sparkData[key]; if(d.length<2) return;
+  const mn=Math.min(...d); const mx=Math.max(...d)||1;
+  const colors={dl:'rgba(0,245,255',ul:'rgba(168,85,247',ping:'rgba(16,255,176',jitter:'rgba(249,115,22'};
+  const c=colors[key]||'rgba(255,255,255';
+
+  ctx.beginPath();
+  d.forEach((v,i)=>{
+    const x=i/(d.length-1)*W;
+    const y=H-(v-mn)/(mx-mn||1)*(H-4)-2;
+    i===0?ctx.moveTo(x,y):ctx.lineTo(x,y);
+  });
+  const grad=ctx.createLinearGradient(0,0,W,0);
+  grad.addColorStop(0,`${c},0.2)`);
+  grad.addColorStop(1,`${c},0.9)`);
+  ctx.strokeStyle=grad; ctx.lineWidth=1.5; ctx.lineCap='round'; ctx.lineJoin='round';
+  ctx.stroke();
+
+  // fill
+  ctx.lineTo(W,H); ctx.lineTo(0,H); ctx.closePath();
+  const fillGrad=ctx.createLinearGradient(0,0,0,H);
+  fillGrad.addColorStop(0,`${c},0.2)`);
+  fillGrad.addColorStop(1,`${c},0)`);
+  ctx.fillStyle=fillGrad; ctx.fill();
+}
+
+/* ═══════════════════════════════════════
+   RESULT CARD GRAPHS
+═══════════════════════════════════════ */
+const cardGraphData = { dl:[], ul:[], ping:[] };
+
+function pushCardGraph(key, val){
+  cardGraphData[key].push(val);
+  if(cardGraphData[key].length>50) cardGraphData[key].shift();
+  drawCardGraph(key);
+}
+
+function drawCardGraph(key){
+  const cv = document.getElementById(`graph-${key}`);
+  if(!cv) return;
+  const ctx = cv.getContext('2d');
+  const W=cv.offsetWidth||200; const H=cv.offsetHeight||50;
+  cv.width=W*2; cv.height=H*2; ctx.scale(2,2);
+  ctx.clearRect(0,0,W,H);
+  const d=cardGraphData[key]; if(d.length<2) return;
+  const mn=Math.min(...d)*0.9; const mx=Math.max(...d)*1.1||1;
+  const colors={dl:'rgba(0,245,255',ul:'rgba(168,85,247',ping:'rgba(16,255,176'};
+  const c=colors[key];
+
+  ctx.beginPath();
+  d.forEach((v,i)=>{
+    const x=i/(d.length-1)*W;
+    const y=H-(v-mn)/(mx-mn||1)*(H-6)-3;
+    i===0?ctx.moveTo(x,y):ctx.lineTo(x,y);
+  });
+  ctx.strokeStyle=`${c},0.9)`;
+  ctx.lineWidth=2; ctx.lineCap='round'; ctx.lineJoin='round'; ctx.stroke();
+
+  ctx.lineTo(W,H); ctx.lineTo(0,H); ctx.closePath();
+  const g=ctx.createLinearGradient(0,0,0,H);
+  g.addColorStop(0,`${c},0.3)`);
+  g.addColorStop(1,`${c},0)`);
+  ctx.fillStyle=g; ctx.fill();
+}
+
+/* ═══════════════════════════════════════
+   SPEED TEST SIMULATION ENGINE
+═══════════════════════════════════════ */
+let testRunning = false;
+
+function lerp(a,b,t){ return a+(b-a)*t; }
+function rand(min,max){ return min+Math.random()*(max-min); }
+function sleep(ms){ return new Promise(r=>setTimeout(r,ms)); }
+
+function animCounter(el, from, to, dur, decimals=1){
+  const start=performance.now();
+  return new Promise(resolve=>{
+    function step(now){
+      const p=Math.min((now-start)/dur,1);
+      const ease=1-Math.pow(1-p,3);
+      const val=lerp(from,to,ease);
+      el.textContent = decimals>0?val.toFixed(decimals):Math.round(val);
+      if(p<1) requestAnimationFrame(step);
+      else resolve();
+    }
+    requestAnimationFrame(step);
+  });
+}
+
+function setSpeedDisplay(val, label, pill){
+  document.getElementById('speed-value').textContent = val>0?val.toFixed(1):'0';
+  if(label) document.getElementById('speed-label').textContent = label;
+  if(pill)  document.getElementById('status-pill').textContent = pill;
+}
+
+async function startTest(){
+  if(testRunning) return;
+  testRunning=true;
+
+  const btn=document.getElementById('btn-start');
+  btn.classList.add('running');
+  btn.textContent='جارٍ الاختبار…';
+  window._speedo.running=true;
+
+  // Reset card data
+  Object.keys(cardGraphData).forEach(k=>cardGraphData[k]=[]);
+  Object.keys(sparkData).forEach(k=>sparkData[k]=[]);
+
+  // Reset pills
+  ['dl','ul','ping','jitter'].forEach(k=>{
+    document.getElementById(`pill-${k}-val`).textContent='—';
+  });
+
+  // ── Phase 1: PING ──
+  document.getElementById('speed-label').textContent='بينج';
+  document.getElementById('status-pill').textContent='قياس التأخير…';
+  window._speedo.target=0;
+
+  const pingTarget = rand(6,25);
+  const jitterTarget = rand(1,8);
+
+  for(let i=0;i<20;i++){
+    const p=pingTarget+rand(-3,3);
+    document.getElementById('pill-ping-val').textContent=p.toFixed(0);
+    pushSpark('ping',p);
+    pushSpark('jitter',jitterTarget+rand(-1,1));
+    await sleep(80);
+  }
+  document.getElementById('pill-ping-val').textContent=pingTarget.toFixed(0);
+  document.getElementById('pill-jitter-val').textContent=jitterTarget.toFixed(1);
+
+  // ── Phase 2: DOWNLOAD ──
+  document.getElementById('speed-label').textContent='تنزيل';
+  document.getElementById('status-pill').textContent='قياس سرعة التنزيل…';
+
+  const dlTarget = rand(45,290);
+  let dlVal=0;
+  const dlDur=5000;
+  const dlStart=performance.now();
+
+  while(performance.now()-dlStart < dlDur){
+    const p=Math.min((performance.now()-dlStart)/dlDur,1);
+    const ease=Math.pow(p,0.5);
+    dlVal=ease*dlTarget + rand(-dlTarget*0.05,dlTarget*0.05);
+    dlVal=Math.max(0,dlVal);
+    window._speedo.target = dlVal/300;
+    const dispVal=dlVal.toFixed(1);
+    document.getElementById('speed-value').textContent=dispVal;
+    document.getElementById('pill-dl-val').textContent=dispVal;
+    pushSpark('dl',dlVal);
+    pushCardGraph('dl',dlVal);
+    await sleep(60);
+  }
+  const finalDL = dlTarget + rand(-2,2);
+  window._speedo.target = finalDL/300;
+
+  // ── Phase 3: UPLOAD ──
+  document.getElementById('speed-label').textContent='رفع';
+  document.getElementById('status-pill').textContent='قياس سرعة الرفع…';
+
+  const ulTarget = rand(15,Math.min(dlTarget*0.6,120));
+  let ulVal=0;
+  const ulDur=4000;
+  const ulStart=performance.now();
+
+  while(performance.now()-ulStart < ulDur){
+    const p=Math.min((performance.now()-ulStart)/ulDur,1);
+    const ease=Math.pow(p,0.55);
+    ulVal=ease*ulTarget + rand(-ulTarget*0.05,ulTarget*0.05);
+    ulVal=Math.max(0,ulVal);
+    window._speedo.target = ulVal/300;
+    const dispVal=ulVal.toFixed(1);
+    document.getElementById('speed-value').textContent=dispVal;
+    document.getElementById('pill-ul-val').textContent=dispVal;
+    pushSpark('ul',ulVal);
+    pushCardGraph('ul',ulVal);
+    await sleep(60);
+  }
+  const finalUL = ulTarget + rand(-1,1);
+  window._speedo.target=0;
+
+  // ── Done ──
+  window._speedo.running=false;
+  document.getElementById('speed-label').textContent='اكتمل';
+  document.getElementById('speed-value').textContent='✓';
+  document.getElementById('status-pill').textContent='تم الاختبار بنجاح';
+
+  // Animate result cards
+  await sleep(300);
+  showResultCards(finalDL, finalUL, pingTarget);
+
+  await sleep(800);
+  btn.classList.remove('running');
+  btn.textContent='إعادة الاختبار';
+  testRunning=false;
+}
+
+function showResultCards(dl, ul, ping){
+  // Fill card graphs with data
+  for(let i=0;i<cardGraphData.dl.length;i++) drawCardGraph('dl');
+  for(let i=0;i<cardGraphData.ul.length;i++) drawCardGraph('ul');
+  for(let i=0;i<40;i++){
+    cardGraphData.ping.push(ping + rand(-3,3));
+    drawCardGraph('ping');
+  }
+
+  document.getElementById('card-dl-val').textContent=dl.toFixed(1);
+  document.getElementById('card-ul-val').textContent=ul.toFixed(1);
+  document.getElementById('card-ping-val').textContent=ping.toFixed(0);
+
+  ['dl','ul','ping'].forEach((k,i)=>{
+    setTimeout(()=>{
+      const card=document.getElementById(`card-${k}`);
+      card.classList.add('visible');
+    }, i*120);
+  });
+}
+</script>
 </body>
 </html>
