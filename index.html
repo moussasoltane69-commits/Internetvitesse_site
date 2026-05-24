@@ -3,24 +3,23 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SpeedTest Pro | سرعة البرق</title>
+    <title>SpeedTest Pro</title>
     <script src="https://cdn.jsdelivr.net/npm/librespeed@latest/build/speedtest.min.js"></script>
     <style>
-        :root { --neon: #00d2ff; --bg: #050a14; --glass: rgba(255, 255, 255, 0.05); }
-        body { background: var(--bg); color: #fff; font-family: 'Segoe UI', sans-serif; display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100vh; margin: 0; overflow: hidden; }
+        :root { --neon: #00d2ff; --bg: #050a14; }
+        body { background: var(--bg); color: #fff; font-family: 'Segoe UI', sans-serif; display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100vh; margin: 0; }
         
-        #mainUI, #resultPage { text-align: center; width: 90%; max-width: 400px; padding: 20px; border-radius: 30px; background: var(--glass); backdrop-filter: blur(10px); border: 1px solid rgba(255,255,255,0.1); }
+        /* تصميم العداد المطابق للصورة */
+        .gauge-wrapper { width: 280px; height: 280px; border-radius: 50%; border: 6px solid #1a2a40; display: flex; flex-direction: column; align-items: center; justify-content: center; box-shadow: 0 0 40px rgba(0,210,255,0.2); }
+        .gauge { font-size: 60px; font-weight: 800; color: var(--neon); }
         
-        .gauge-wrapper { width: 220px; height: 220px; border-radius: 50%; background: radial-gradient(circle, #1a2a40, #050a14); border: 4px solid var(--neon); display: flex; flex-direction: column; align-items: center; justify-content: center; box-shadow: 0 0 50px rgba(0,210,255,0.3); margin: 0 auto 20px; }
-        .gauge { font-size: 55px; font-weight: 900; color: #fff; text-shadow: 0 0 20px var(--neon); }
+        .btn { margin-top: 30px; padding: 18px 50px; background: linear-gradient(135deg, var(--neon), #3a7bd5); border: none; color: white; border-radius: 50px; font-size: 18px; cursor: pointer; }
         
-        .btn { margin-top: 20px; padding: 15px 40px; background: linear-gradient(90deg, var(--neon), #3a7bd5); border: none; color: white; border-radius: 50px; font-size: 18px; cursor: pointer; transition: 0.3s; box-shadow: 0 5px 15px rgba(0,0,0,0.3); }
-        .btn:hover { transform: scale(1.05); box-shadow: 0 0 20px var(--neon); }
-
-        #resultPage { display: none; }
-        .stats-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin: 20px 0; }
-        .stat-item { background: rgba(0,0,0,0.2); padding: 15px; border-radius: 15px; border: 1px solid rgba(255,255,255,0.05); }
-        .stat-item b { font-size: 20px; color: var(--neon); }
+        /* نتائج احترافية */
+        #resultPage { display: none; text-align: center; background: #0f172a; padding: 30px; border-radius: 20px; border: 1px solid var(--neon); }
+        .stats-grid { display: flex; gap: 20px; margin: 20px 0; }
+        .stat-item { background: #1e293b; padding: 15px; border-radius: 15px; flex: 1; }
+        .stat-item b { display: block; font-size: 20px; color: var(--neon); }
     </style>
 </head>
 <body>
@@ -28,33 +27,38 @@
     <div id="mainUI">
         <div class="gauge-wrapper">
             <div class="gauge" id="speed">0</div>
-            <div style="color: var(--neon);">Mbps</div>
+            <div style="opacity: 0.7;">Mbps</div>
         </div>
-        <button class="btn" id="startBtn" onclick="startTest()">بدء الاختبار</button>
+        <button class="btn" id="startBtn" onclick="runSpeedTest()">بدء الاختبار</button>
     </div>
 
     <div id="resultPage">
-        <h2 style="color:var(--neon)">نتائج الاختبار</h2>
+        <h2 style="color:var(--neon)">النتائج النهائية</h2>
         <div class="stats-grid">
-            <div class="stat-item">التحميل<br><b id="resDl">0</b> Mbps</div>
-            <div class="stat-item">البنج<br><b id="resPing">0</b> ms</div>
-            <div class="stat-item" style="grid-column: span 2;">الرفع<br><b id="resUl">0</b> Mbps</div>
+            <div class="stat-item">التحميل<br><b id="resDl">0</b></div>
+            <div class="stat-item">البنج<br><b id="resPing">0</b></div>
         </div>
+        <div class="stat-item">الرفع<br><b id="resUl">0</b></div>
+        <br>
         <button class="btn" onclick="location.reload()">اختبار جديد</button>
     </div>
 
     <script>
-        function startTest() {
+        function runSpeedTest() {
             document.getElementById('startBtn').style.display = 'none';
+            // تهيئة المحرك
             const s = new Speedtest();
             s.onUpdate = (data) => {
+                // تحديث العداد أثناء الاختبار
                 document.getElementById('speed').innerText = Math.round(data.dlStatus);
+                
+                // التحقق من حالة الانتهاء (حالة 4 = اكتمل الاختبار)
                 if(data.testState === 4) {
                     document.getElementById('mainUI').style.display = 'none';
                     document.getElementById('resultPage').style.display = 'block';
-                    document.getElementById('resDl').innerText = Math.round(data.dlStatus);
-                    document.getElementById('resPing').innerText = Math.round(data.pingStatus);
-                    document.getElementById('resUl').innerText = Math.round(data.ulStatus);
+                    document.getElementById('resDl').innerText = Math.round(data.dlStatus) + " Mbps";
+                    document.getElementById('resPing').innerText = Math.round(data.pingStatus) + " ms";
+                    document.getElementById('resUl').innerText = Math.round(data.ulStatus) + " Mbps";
                 }
             };
             s.start();
