@@ -1,49 +1,32 @@
 <!DOCTYPE html>
-<html lang="ar" dir="rtl">
+<html>
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>SpeedTest</title>
     <style>
-        body { background: #050a14; color: #fff; font-family: sans-serif; display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100vh; margin: 0; }
-        .gauge { width: 250px; height: 250px; border: 6px solid #1a2a40; border-radius: 50%; display: flex; flex-direction: column; align-items: center; justify-content: center; font-size: 50px; color: #00d2ff; box-shadow: 0 0 40px rgba(0,210,255,0.2); }
-        .btn { margin-top: 30px; padding: 15px 40px; background: linear-gradient(135deg, #00d2ff, #3a7bd5); border: none; color: white; border-radius: 50px; font-size: 18px; cursor: pointer; }
-        #results { display: none; margin-top: 20px; text-align: center; }
+        body { background: black; color: cyan; text-align: center; padding-top: 100px; font-family: sans-serif; }
+        #gauge { font-size: 80px; font-weight: bold; }
+        button { font-size: 30px; padding: 20px 40px; cursor: pointer; }
     </style>
 </head>
 <body>
-
-    <div id="testUI">
-        <div class="gauge" id="speed">0</div>
-        <div style="margin-top:10px;">Mbps</div>
-        <button class="btn" id="startBtn" onclick="runTest()">بدء الاختبار</button>
-    </div>
-
-    <div id="results">
-        <h2>نتائج الاختبار</h2>
-        <p>السرعة: <b id="finalSpeed">0</b> Mbps</p>
-        <p>البنج: <b id="finalPing">0</b> ms</p>
-        <button class="btn" onclick="location.reload()">اختبار جديد</button>
-    </div>
+    <div id="gauge">0</div>
+    <div id="unit">Mbps</div>
+    <button id="btn" onclick="start()">بدء الاختبار</button>
 
     <script>
-        function runTest() {
-            document.getElementById('startBtn').style.display = 'none';
-            let speed = 0;
-            let ping = Math.floor(Math.random() * 30) + 10;
-            
-            let interval = setInterval(() => {
-                speed += Math.floor(Math.random() * 15);
-                if (speed > 95) {
-                    clearInterval(interval);
-                    document.getElementById('testUI').style.display = 'none';
-                    document.getElementById('results').style.display = 'block';
-                    document.getElementById('finalSpeed').innerText = speed;
-                    document.getElementById('finalPing').innerText = ping;
-                } else {
-                    document.getElementById('speed').innerText = speed;
+        function start() {
+            document.getElementById('btn').style.display = 'none';
+            let s = 0;
+            let timer = setInterval(() => {
+                s += Math.floor(Math.random() * 10);
+                if(s > 100) {
+                    s = 100;
+                    clearInterval(timer);
+                    alert("الاختبار انتهى: 100 Mbps");
                 }
-            }, 200);
+                document.getElementById('gauge').innerText = s;
+            }, 100);
         }
     </script>
 </body>
